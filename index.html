@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Favourite Activities: Pictogram Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#E6F4FF;--card:#fff;--ink:#17325C;--soft:#5B7399;--line:#BCD6F2;--good:#1E9E55;--star:#F7B500;
+ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1B33;--card:#1B2B4D;--ink:#F2F7FF;--soft:#A9BEE0;--line:#35507F}}
+:root[data-theme="dark"]{--bg:#0F1B33;--card:#1B2B4D;--ink:#F2F7FF;--soft:#A9BEE0;--line:#35507F}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Baloo 2","Trebuchet MS","Comic Sans MS",system-ui,sans-serif;font-weight:500;font-size:18px;line-height:1.3}
+main{max-width:760px;margin:0 auto;padding:14px 14px 40px}
+h1{font-size:clamp(28px,7vw,44px);font-weight:800;margin:6px 0 2px;line-height:1.05}
+p.lead{margin:0 0 12px;color:var(--soft);font-size:19px}
+.tabs{display:flex;gap:10px;margin-bottom:14px}
+.tabs button{flex:1}
+button{font:inherit;font-weight:700;border:0;border-radius:18px;cursor:pointer;min-height:56px;padding:8px 14px;color:var(--ink);background:var(--card);box-shadow:0 4px 0 var(--line)}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+button:focus-visible{outline:4px solid var(--star);outline-offset:2px}
+.tabs button.on{background:var(--ink);color:var(--bg)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.act{display:flex;flex-direction:column;align-items:center;gap:0;padding:10px 6px;color:#fff;font-size:20px;box-shadow:0 5px 0 rgba(0,0,0,.25)}
+.act span.e{font-size:44px;line-height:1.1}
+.act:active{box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.chart{background:var(--card);border-radius:22px;padding:14px 8px 8px;margin-top:16px}
+.chart h2{font-size:22px;margin:0 8px 8px}
+.cols{display:flex;align-items:flex-end;gap:2px;min-height:190px;border-bottom:4px solid var(--ink)}
+.col{flex:1;display:flex;flex-direction:column-reverse;align-items:center;min-width:0}
+.pic{font-size:clamp(20px,5.2vw,32px);line-height:1.12;animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.2)}70%{transform:scale(1.35)}to{transform:scale(1)}}
+.labels{display:flex;gap:2px;padding-top:4px}
+.labels div{flex:1;text-align:center;min-width:0;font-weight:800;font-size:clamp(11px,2.8vw,15px)}
+.labels b{display:block;font-size:clamp(20px,5vw,28px)}
+.tools{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.tools button{flex:1;min-width:140px;font-size:16px}
+.total{margin:8px 8px 0;color:var(--soft)}
+.q{background:var(--card);border-radius:22px;padding:18px}
+.q h2{font-size:clamp(22px,5.5vw,30px);margin:0 0 12px;line-height:1.15}
+.opts{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.opts button{font-size:24px;min-height:68px;background:var(--bg)}
+.opts button.right{background:var(--good);color:#fff}
+.opts button.wrong{opacity:.45}
+.stars{font-size:30px;letter-spacing:4px;margin-bottom:6px}
+.msg{font-size:22px;font-weight:800;min-height:34px;margin-top:10px}
+.say{min-height:44px;font-size:16px;margin-bottom:10px}
+.hide{display:none}
+@media (prefers-reduced-motion:reduce){.pic{animation:none}button:active{transform:none}}
+</style>
+</head>
+<body>
+<main>
+<h1>My favourite activities</h1>
+<p class="lead" id="lead">Tap your favourite. A picture jumps onto the chart!</p>
+<div class="tabs">
+  <button id="tabVote" class="on" type="button">Vote</button>
+  <button id="tabQuiz" type="button">Questions</button>
+</div>
+
+<section id="vote">
+  <div class="grid" id="buttons"></div>
+  <div class="tools">
+    <button type="button" id="undo">Take one away</button>
+    <button type="button" id="fill">Add class votes</button>
+    <button type="button" id="clear">Start again</button>
+  </div>
+</section>
+
+<section id="quiz" class="hide">
+  <div class="q">
+    <div class="stars" id="stars" aria-label="Stars won"></div>
+    <button type="button" class="say" id="say">Read it to me</button>
+    <h2 id="qtext"></h2>
+    <div class="opts" id="opts"></div>
+    <div class="msg" id="msg" role="status"></div>
+    <div class="tools"><button type="button" id="next" class="hide">Next question</button></div>
+  </div>
+</section>
+<div class="chart">
+    <h2>Our pictogram</h2>
+    <div class="cols" id="cols"></div>
+    <div class="labels" id="labels"></div>
+    <p class="total" id="total"></p>
+  </div>
+</main>
+
+<script>
+const ACTS=[
+ {id:"football",n:"Football",e:"⚽",c:"#2E9E4F"},
+ {id:"swimming",n:"Swimming",e:"🏊",c:"#1E88E5"},
+ {id:"art",n:"Art",e:"🎨",c:"#D81B8C"},
+ {id:"cooking",n:"Cooking",e:"🍳",c:"#D97706"},
+ {id:"gymnastics",n:"Gymnastics",e:"🤸",c:"#8E44AD"},
+ {id:"boxing",n:"Boxing",e:"🥊",c:"#D32F2F"},
+ {id:"karate",n:"Karate",e:"🥋",c:"#455A64"}
+];
+const $=id=>document.getElementById(id);
+let votes=[]; // list of activity ids, newest last
+const count=id=>votes.filter(v=>v===id).length;
+const say=t=>{try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.rate=.85;speechSynthesis.speak(u)}catch(e){}};
+
+// ---------- vote screen ----------
+$("buttons").innerHTML=ACTS.map(a=>`<button type="button" class="act" data-id="${a.id}" style="background:${a.c}" aria-label="Vote for ${a.n}"><span class="e">${a.e}</span>${a.n}</button>`).join("");
+$("buttons").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  votes.push(b.dataset.id);draw();
+  const a=ACTS.find(x=>x.id===b.dataset.id);say(a.n+", "+count(a.id));
+});
+function draw(){
+  $("cols").innerHTML=ACTS.map(a=>`<div class="col" title="${a.n}: ${count(a.id)}">${`<span class="pic" aria-hidden="true">${a.e}</span>`.repeat(count(a.id))}</div>`).join("");
+  $("labels").innerHTML=ACTS.map(a=>`<div style="color:${a.c}"><b>${count(a.id)}</b>${a.e}</div>`).join("");
+  $("total").textContent=votes.length?`${votes.length} ${votes.length===1?"vote":"votes"} so far. Each picture is 1 vote.`:"No votes yet. Tap an activity above!";
+  const ready=enough();$("tabQuiz").style.opacity=ready?1:.6;
+}
+$("undo").onclick=()=>{votes.pop();draw()};
+$("clear").onclick=()=>{votes=[];draw()};
+$("fill").onclick=()=>{
+  votes=[];const pool=[1,2,3,4,5,6,7,8];
+  ACTS.forEach(a=>{const n=pool.splice(Math.floor(Math.random()*pool.length),1)[0];for(let i=0;i<n;i++)votes.push(a.id)});
+  draw();
+};
+const enough=()=>new Set(ACTS.map(a=>count(a.id)).filter(n=>n>0)).size>=3;
+
+// ---------- tabs ----------
+function show(which){
+  $("vote").classList.toggle("hide",which!=="vote");$("quiz").classList.toggle("hide",which!=="quiz");
+  $("tabVote").classList.toggle("on",which==="vote");$("tabQuiz").classList.toggle("on",which==="quiz");
+  $("lead").textContent=which==="vote"?"Tap your favourite. A picture jumps onto the chart!":"Look at the pictogram and answer.";
+  if(which==="quiz")startQuiz();
+}
+$("tabVote").onclick=()=>show("vote");
+$("tabQuiz").onclick=()=>show("quiz");
+
+// ---------- quiz ----------
+let round=0,stars=0,cur=null,locked=false;
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(p=>p[1]);
+function makeQ(){
+  const used=ACTS.filter(a=>count(a.id)>0);
+  for(let t=0;t<60;t++){
+    const type=rnd(["most","fewest","howmany","more"]);
+    if(type==="most"||type==="fewest"){
+      const cs=used.map(a=>count(a.id));const target=type==="most"?Math.max(...cs):Math.min(...cs);
+      const win=used.filter(a=>count(a.id)===target);if(win.length!==1)continue;
+      const others=shuffle(used.filter(a=>a!==win[0])).slice(0,2);if(others.length<2)continue;
+      return{text:`Which activity has the ${type==="most"?"most":"fewest"} pictures?`,opts:shuffle([win[0],...others]).map(a=>({label:a.e+" "+a.n,val:a.id})),ans:win[0].id};
+    }
+    if(type==="howmany"){
+      const a=rnd(used),n=count(a.id);const o=new Set([n]);
+      while(o.size<3)o.add(Math.max(0,n+Math.floor(Math.random()*7)-3));
+      return{text:`How many ${a.e} ${a.n} pictures can you count?`,opts:shuffle([...o]).map(v=>({label:String(v),val:String(v)})),ans:String(n)};
+    }
+    const [x,y]=shuffle(used).slice(0,2);if(!y||count(x.id)===count(y.id))continue;
+    const w=count(x.id)>count(y.id)?x:y;
+    return{text:`Which has more: ${x.e} ${x.n} or ${y.e} ${y.n}?`,opts:shuffle([x,y]).map(a=>({label:a.e+" "+a.n,val:a.id})),ans:w.id};
+  }
+  return null;
+}
+function startQuiz(){round=0;stars=0;nextQ()}
+function drawStars(){$("stars").textContent="⭐".repeat(stars)+"☆".repeat(5-stars)}
+function nextQ(){
+  locked=false;$("msg").textContent="";$("next").classList.add("hide");drawStars();
+  if(!enough()){
+    $("qtext").textContent="Vote first! Tap at least 3 different activities, with different numbers of votes.";
+    $("opts").innerHTML=`<button type="button" id="goVote">Go and vote</button>`;
+    $("goVote").onclick=()=>show("vote");return;
+  }
+  if(round>=5){
+    $("qtext").textContent=stars===5?"Amazing! 5 stars!":`Well done! You won ${stars} ${stars===1?"star":"stars"}!`;
+    $("opts").innerHTML=`<button type="button" id="again">Play again</button>`;
+    $("again").onclick=startQuiz;say($("qtext").textContent);return;
+  }
+  cur=makeQ();
+  $("qtext").textContent=cur.text;
+  $("opts").innerHTML=cur.opts.map(o=>`<button type="button" data-v="${o.val}">${o.label}</button>`).join("");
+  say(cur.text.replace(/[^\w\s?:]/g,""));
+}
+$("opts").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-v]");if(!b||locked)return;
+  if(b.dataset.v===cur.ans){
+    locked=true;b.classList.add("right");stars++;round++;drawStars();
+    $("msg").textContent="Yes! Great job!";$("next").textContent=round>=5?"See my stars":"Next question";$("next").classList.remove("hide");
+  }else{
+    b.classList.add("wrong");b.disabled=true;$("msg").textContent="Nearly! Look at the chart and try again.";
+  }
+});
+$("next").onclick=nextQ;
+$("say").onclick=()=>say($("qtext").textContent.replace(/[^\w\s?:]/g,""));
+draw();
+</script>
+</body>
+</html>
